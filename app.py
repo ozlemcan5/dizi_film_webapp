@@ -9,7 +9,7 @@ import sys
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'gizli-anahtar-kelime'
+app.config['SECRET_KEY'] = 'SECRET_KEY'
 
 database_url = os.environ.get('DATABASE_URL')
 if database_url and database_url.startswith('postgres://'):
