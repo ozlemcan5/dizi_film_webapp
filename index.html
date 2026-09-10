@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ne İzlesem?</title>
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 650px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        h1, h2 { text-align: center; color: #f5c518; }
+        .form-section, .wheel-section { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        form { display: flex; gap: 10px; }
+        input, select { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #121212; color: #fff; }
+        input { flex: 2; } select { flex: 1; }
+        button, .btn { background: #f5c518; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .main-tabs, .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; background: #2a2a2a; color: #aaa; text-align: center; text-decoration: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .tab-btn.active { background: #f5c518; color: #000; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; color: #aaa; }
+        .top-bar a { color: #ff4757; text-decoration: none; font-weight: bold; }
+
+        /* Çark Konteyner Stilleri */
+        .wheel-container { position: relative; width: 320px; height: 320px; margin: 0 auto 15px auto; }
+        canvas { width: 100%; height: 100%; }
+        .wheel-pointer {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 10px solid transparent;
+            border-right: 10px solid transparent; border-bottom: 20px solid #ff4757; z-index: 10;
+        }
+        .btn-wheel { background: #ff4757; color: white; font-size: 16px; padding: 12px 25px; }
+        
+        .suggestion-box { margin-top: 15px; background: #1e272e; padding: 15px; border-radius: 8px; border: 1px solid #0be881; display: none; }
+        .suggestion-title { font-size: 20px; font-weight: bold; color: #0be881; margin: 8px 0; }
+        
+        .media-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; }
+        .media-item.watched { opacity: 0.5; text-decoration: line-through; }
+        .actions { display: flex; gap: 8px; }
+        .btn-toggle { background: #333; color: #fff; cursor: pointer; }
+        .btn-delete { background: transparent; color: #ff4757; border: 1px solid #ff4757; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <span>Hoş geldin, <b>{{ current_user.username }}</b></span>
+            <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+        </div>
+
+        <h1>🎬 Ne İzlesem?</h1>
+
+        <!-- Ekleme Formu -->
+        <div class="form-section" style="text-align: left;">
+            <h2>Yeni İçerik Ekle</h2>
+            <form action="/add" method="POST">
+                <input type="text" name="title" placeholder="Film veya Dizi adı..." required>
+                <select name="type" id="formTypeSelect">
+                    <option value="film" {% if active_tab == 'film' %}selected{% endif %}>Film</option>
+                    <option value="dizi" {% if active_tab == 'dizi' %}selected{% endif %}>Dizi</option>
+                </select>
+                <button type="submit">Ekle</button>
+            </form>
+        </div>
+
+        <!-- Ana Sekmeler -->
+        <div class="main-tabs">
+            <div class="tab-btn {% if active_tab == 'film' %}active{% endif %}" onclick="switchTab('film')">Filmler</div>
+            <div class="tab-btn {% if active_tab == 'dizi' %}active{% endif %}" onclick="switchTab('dizi')">Diziler</div>
+        </div>
+
+        <!-- Çark Alanı -->
+        <div class="wheel-section">
+            <h3 id="wheelTitle">Bırakın Çark Karar Versin</h3>
+            
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheelCanvas" width="320" height="320"></canvas>
+            </div>
+
+            <button class="btn btn-wheel" id="spinBtn" onclick="spinWheel()">🎲 Çarkı Çevir</button>
+
+            <div class="suggestion-box" id="suggestionBox">
+                <h4>🎉 Çarkın Seçimi:</h4>
+                <div class="suggestion-title" id="winnerTitle"></div>
+                <button class="btn" style="background: #0be881;" onclick="markWatchedFromSuggestion()">İzlendi İşaretle ve Çarktan Kaldır ✅</button>
+            </div>
+        </div>
+
+        <!-- Filtreler ve Liste -->
+        <div>
+            <div class="sub-tabs">
+                <div class="tab-btn sub-filter active" data-filter="hepsi" onclick="setSubFilter('hepsi')" style="font-size: 13px; padding: 8px;">Tümü</div>
+                <div class="tab-btn sub-filter" data-filter="izlenecek" onclick="setSubFilter('izlenecek')" style="font-size: 13px; padding: 8px;">İzlenmeyenler</div>
+                <div class="tab-btn sub-filter" data-filter="izlenen" onclick="setSubFilter('izlenen')" style="font-size: 13px; padding: 8px;">İzlenenler</div>
+            </div>
+
+            <div id="mediaListContainer">
+                <!-- Dinamik liste buraya gelecek -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allMedia = {{ all_media | tojson }};
+        let activeTab = "{{ active_tab }}";
+        let subTab = "hepsi";
+        let winningItemId = null;
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#9b59b6', '#ff6b81', '#70a1ff'];
+
+        let startAngle = 0;
+        let spinning = false;
+
+        function renderApp() {
+            document.getElementById('wheelTitle').innerText = 'Bırakın Çark Karar Versin!!';
+            document.getElementById('formTypeSelect').value = activeTab;
+
+            const container = document.getElementById('mediaListContainer');
+            container.innerHTML = '';
+
+            const filtered = allMedia.filter(item => {
+                if (item.type !== activeTab) return false;
+                if (subTab === 'izlenecek' && item.watched) return false;
+                if (subTab === 'izlenen' && !item.watched) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #777;">Bu kategoride henüz kayıt yok.</p>';
+            } else {
+                filtered.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = `media-item ${item.watched ? 'watched' : ''}`;
+                    div.innerHTML = `
+                        <span>${item.title}</span>
+                        <div class="actions">
+                            <button class="btn btn-toggle" onclick="toggleItem(${item.id})">${item.watched ? 'İzlenmedi İşaretle' : 'İzlendi İşaretle'}</button>
+                            <button class="btn btn-delete" onclick="deleteItem(${item.id})">Sil</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            drawWheel();
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.main-tabs .tab-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', (idx === 0 && tab === 'film') || (idx === 1 && tab === 'dizi'));
+            });
+            document.getElementById('suggestionBox').style.display = 'none';
+            renderApp();
+        }
+
+        function setSubFilter(filter) {
+            subTab = filter;
+            document.querySelectorAll('.sub-filter').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
+            });
+            renderApp();
+        }
+
+        function toggleItem(id) {
+            fetch(`/toggle/${id}`)
+                .then(() => {
+                    const item = allMedia.find(m => m.id === id);
+                    if (item) item.watched = !item.watched;
+                    document.getElementById('suggestionBox').style.display = 'none';
+                    renderApp();
+                });
+        }
+
+        function deleteItem(id) {
+            fetch(`/delete/${id}`)
+                .then(() => {
+                    allMedia = allMedia.filter(m => m.id !== id);
+                    document.getElementById('suggestionBox').style.display = 'none';
+                    renderApp();
+                });
+        }
+
+        function markWatchedFromSuggestion() {
+            if (winningItemId !== null) {
+                toggleItem(winningItemId);
+            }
+        }
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const unwatchedItems = allMedia.filter(item => item.type === activeTab && !item.watched);
+            const arc = unwatchedItems.length > 0 ? (2 * Math.PI) / unwatchedItems.length : 0;
+            const center = 160;
+            const radius = 150;
+
+            if (unwatchedItems.length === 0) {
+                ctx.fillStyle = "#888";
+                ctx.font = "bold 14px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("İzlenmeyen öğe yok!", center, center);
+                return;
+            }
+
+            for (let i = 0; i < unwatchedItems.length; i++) {
+                const angle = startAngle + i * arc;
+                ctx.fillStyle = colors[i % colors.length];
+
+                ctx.beginPath();
+                ctx.arc(center, center, radius, angle, angle + arc, false);
+                ctx.lineTo(center, center);
+                ctx.fill();
+
+                ctx.strokeStyle = "#1e1e1e";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(center, center);
+                const textAngle = angle + arc / 2;
+                const distance = 90;
+                ctx.rotate(textAngle);
+                ctx.translate(distance, 0);
+                
+                if (textAngle > Math.PI / 2 && textAngle < 3 * Math.PI / 2) {
+                    ctx.rotate(Math.PI);
+                }
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 13px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                let title = unwatchedItems[i].title;
+                if (title.length > 14) {
+                    title = title.substring(0, 12) + '...';
+                }
+
+                ctx.fillText(title, 0, 0);
+                ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            const unwatchedItems = allMedia.filter(item => item.type === activeTab && !item.watched);
+            if (spinning || unwatchedItems.length === 0) return;
+            
+            spinning = true;
+            document.getElementById('suggestionBox').style.display = 'none';
+
+            let spinAngleTime = 0;
+            let spinTimeTotal = Math.random() * 1000 + 3500;
+
+            function rotateWheel() {
+                spinAngleTime += 30;
+                if (spinAngleTime >= spinTimeTotal) {
+                    stopRotateWheel(unwatchedItems);
+                    return;
+                }
+                let spinAngle = (spinTimeTotal - spinAngleTime) / spinTimeTotal * 0.25 + 0.005;
+                startAngle += spinAngle;
+                drawWheel();
+                requestAnimationFrame(rotateWheel);
+            }
+            rotateWheel();
+        }
+
+        function stopRotateWheel(unwatchedItems) {
+            spinning = false;
+            let degrees = startAngle * 180 / Math.PI + 90;
+            let arcd = (2 * Math.PI) / unwatchedItems.length * 180 / Math.PI;
+            let index = Math.floor((360 - (degrees % 360)) / arcd) % unwatchedItems.length;
+            
+            let winningItem = unwatchedItems[index];
+            winningItemId = winningItem.id;
+
+            document.getElementById('winnerTitle').innerText = winningItem.title;
+            document.getElementById('suggestionBox').style.display = 'block';
+        }
+
+        renderApp();
+    </script>
+</body>
+</html>
