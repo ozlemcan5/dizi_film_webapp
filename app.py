@@ -6,7 +6,7 @@ import os
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'karar_ver_artik_kimi_daha_çok_sevdiğine'
+app.config['SECRET_KEY'] = 'gizli-anahtar-kelime'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
