@@ -2,6 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import random
+import string
 import random
 import string
 import os
@@ -67,6 +72,27 @@ with app.app_context():
         admin = User(username='admin', password=hashed_pw, is_admin=True)
         db.session.add(admin)
         db.session.commit()
+
+def send_email(to_email, code):
+    sender_email = "ozlemmcann5@gmail.com"        
+    sender_password = "google_uygulama_sifresi"    # Google hesabından alacağın 16 haneli uygulama şifresi
+    
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = to_email
+    msg['Subject'] = 'Şifre Sıfırlama Kodunuz'
+    
+    body = f"Şifre sıfırlama kodunuz: {code}"
+    msg.attach(MIMEText(body, 'plain'))
+    
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, to_email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"E-posta gönderilemedi: {e}")
 
 # --- ROTALAR ---
 
@@ -196,24 +222,23 @@ def profile():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        identifier = request.form.get('identifier') # E-posta veya Telefon
-        user = User.query.filter((User.email == identifier) | (User.phone == identifier)).first()
+        identifier = request.form.get('identifier') # Kullanıcının girdiği e-posta
+        user = User.query.filter((User.email == identifier) | (User.username == identifier)).first()
         
-        if user:
-            # 6 haneli rastgele kod üretme
+        if user and user.email:
+            # 6 haneli rastgele kod üret
             code = ''.join(random.choices(string.digits, k=6))
             user.reset_code = code
             db.session.commit()
             
-            # Not: Gerçek ortamda burada SMS veya E-posta gönderme kodu çalışır. 
-            # Test edebilmen için terminale / konsola yazdırıyoruz:
-            print(f"\n[ŞİFRE SIFIRLAMA KODU] {identifier} için Kod: {code}\n")
+            # E-postayı gönder
+            send_email(user.email, code)
             
             session['reset_user_id'] = user.id
-            flash('Doğrulama kodu gönderildi. (Test için terminale bakabilirsiniz)', 'info')
+            flash('Sıfırlama kodu e-posta adresinize gönderildi.', 'info')
             return redirect(url_for('verify_code'))
         
-        flash('Bu e-posta veya telefon numarasına ait kullanıcı bulunamadı.', 'danger')
+        flash('Bu e-posta adresine ait kayıtlı kullanıcı bulunamadı.', 'danger')
     return render_template('forgot_password.html')
 
 @app.route('/verify-code', methods=['GET', 'POST'])
