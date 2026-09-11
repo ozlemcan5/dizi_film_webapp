@@ -4,20 +4,20 @@
     <meta charset="UTF-8">
     <title>Ne İzlesem?</title>
     <style>
-        body { background-color: #d3cccc; color: #e0e0e0; font-family: sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 650px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-        h1, h2 { text-align: center; color: #f5c518; }
-        .form-section, .wheel-section { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        body { background-color: #d3cccc; color: #222222; font-family: sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 650px; margin: 0 auto; background: #f2f2f2; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        h1, h2 { text-align: center; color: #b8860b; }
+        .form-section, .wheel-section { background: #e4e4e4; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
         form { display: flex; gap: 10px; }
-        input, select { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #121212; color: #fff; }
+        input, select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: #ffffff; color: #000; }
         input { flex: 2; } select { flex: 1; }
-        button, .btn { background: #f5c518; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; }
+        button, .btn { background: #e6c619; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; }
         .main-tabs, .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 12px; background: #b0dfe6; color: #000000; text-align: center; text-decoration: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
-        .tab-btn.active { background: #f5c518; color: #000; }
+        .tab-btn.active { background: #e6c619; color: #000; }
         
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; color: #aaa; }
-        .top-bar a { color: #ff4757; text-decoration: none; font-weight: bold; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; color: #444; }
+        .top-bar a { color: #d93848; text-decoration: none; font-weight: bold; }
 
         /* Çark Konteyner Stilleri */
         .wheel-container { position: relative; width: 320px; height: 320px; margin: 0 auto 15px auto; }
@@ -25,18 +25,18 @@
         .wheel-pointer {
             position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
             width: 0; height: 0; border-left: 10px solid transparent;
-            border-right: 10px solid transparent; border-bottom: 20px solid #ff4757; z-index: 10;
+            border-right: 10px solid transparent; border-bottom: 20px solid #d93848; z-index: 10;
         }
-        .btn-wheel { background: #ff4757; color: white; font-size: 16px; padding: 12px 25px; }
+        .btn-wheel { background: #d93848; color: white; font-size: 16px; padding: 12px 25px; }
         
-        .suggestion-box { margin-top: 15px; background: #1e272e; padding: 15px; border-radius: 8px; border: 1px solid #0be881; display: none; }
-        .suggestion-title { font-size: 20px; font-weight: bold; color: #0be881; margin: 8px 0; }
+        .suggestion-box { margin-top: 15px; background: #e2f0d9; padding: 15px; border-radius: 8px; border: 1px solid #28a745; display: none; }
+        .suggestion-title { font-size: 20px; font-weight: bold; color: #1e7e34; margin: 8px 0; }
         
-        .media-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; }
+        .media-item { display: flex; justify-content: space-between; align-items: center; background: #e4e4e4; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; color: #000; }
         .media-item.watched { opacity: 0.5; }
         .actions { display: flex; gap: 8px; }
-        .btn-toggle { background: #333; color: #fff; cursor: pointer; }
-        .btn-delete { background: transparent; color: #ff4757; border: 1px solid #ff4757; cursor: pointer; }
+        .btn-toggle { background: #dcdcdc; color: #000; cursor: pointer; border: 1px solid #bbb; }
+        .btn-delete { background: transparent; color: #d93848; border: 1px solid #d93848; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -69,7 +69,7 @@
 
         <!-- Çark Alanı -->
         <div class="wheel-section">
-            <h3 id="wheelTitle">Bırakın Çark Karar Versin</h3>
+            <h3 id="wheelTitle" style="color: #333;">Bırakın Çark Karar Versin</h3>
             
             <div class="wheel-container">
                 <div class="wheel-pointer"></div>
@@ -79,9 +79,9 @@
             <button class="btn btn-wheel" id="spinBtn" onclick="spinWheel()">🎲 Çarkı Çevir</button>
 
             <div class="suggestion-box" id="suggestionBox">
-                <h4>🎉 Çarkın Seçimi:</h4>
+                <h4 style="color: #155724; margin: 0 0 5px 0;">🎉 Çarkın Seçimi:</h4>
                 <div class="suggestion-title" id="winnerTitle"></div>
-                <button class="btn" style="background: #0be881;" onclick="markWatchedFromSuggestion()">İzlendi İşaretle ve Çarktan Kaldır ✅</button>
+                <button class="btn" style="background: #28a745; color: #fff;" onclick="markWatchedFromSuggestion()">İzlendi İşaretle ve Çarktan Kaldır ✅</button>
             </div>
         </div>
 
@@ -107,8 +107,7 @@
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
-        const colors = ['#c6e2ff' , '#79cdcd' , '#faf0e6' , '#eee9bf' , '#e0eee0' , '#e6e6fa' , '#87cefa' , '#cae1ff' , '#48d1cc' , '#ffc1c1' , '#ffb6c1' , '#ffe1ff' , '#fa7f8a', '#9cdbb6', '#7dbaf5', '#fccd77', '#c582e0', '#f77286', '#9cb5e6'];
-
+        const colors = ['#c6e2ff' , '#79cdcd' , '#faf0e6' , '#eee9bf' , '#e0eee0' , '#e6e6fa' , '#87cefa' , '#cae1ff' , '#48d1cc' , '#ffc1c1' , '#ffb6c1' , '#ffe1ff' , '#fa7f8a', '#9cdbb6', '#7dbaf5', '#fccd77', '#c582e0', '#f77286', '#9cb5e6' ];
         let startAngle = 0;
         let spinning = false;
 
@@ -127,13 +126,13 @@
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #777;">Bu kategoride henüz kayıt yok.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #666;">Bu kategoride henüz kayıt yok.</p>';
             } else {
                 filtered.forEach(item => {
                     const div = document.createElement('div');
                     div.className = `media-item ${item.watched ? 'watched' : ''}`;
                     div.innerHTML = `
-                        <span>${item.title}</span>
+                        <span style="color: #000; font-weight: 500;">${item.title}</span>
                         <div class="actions">
                             <button class="btn btn-toggle" onclick="toggleItem(${item.id})">${item.watched ? 'İzlenmedi İşaretle' : 'İzlendi İşaretle'}</button>
                             <button class="btn btn-delete" onclick="deleteItem(${item.id})">Sil</button>
@@ -196,7 +195,7 @@
             const radius = 150;
 
             if (unwatchedItems.length === 0) {
-                ctx.fillStyle = "#888";
+                ctx.fillStyle = "#666";
                 ctx.font = "bold 14px sans-serif";
                 ctx.textAlign = "center";
                 ctx.fillText("İzlenmeyen öğe yok!", center, center);
@@ -212,7 +211,7 @@
                 ctx.lineTo(center, center);
                 ctx.fill();
 
-                ctx.strokeStyle = "#1e1e1e";
+                ctx.strokeStyle = "#ffffff";
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
