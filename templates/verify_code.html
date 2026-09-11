@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kod Doğrulama - Ne İzlesem?</title>
+    <style>
+        body { background-color: #d3cccc; color: #222222; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #f2f2f2; padding: 30px; border-radius: 12px; width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        h2 { color: #000000; text-align: center; margin-bottom: 15px; font-size: 20px; }
+        p { font-size: 13px; color: #555; text-align: center; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ccc; background: #ffffff; color: #000; box-sizing: border-box; text-align: center; font-size: 18px; letter-spacing: 3px; }
+        button { width: 100%; background: #f1e07e; color: #000; border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .alert { background: #e96472; color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; text-align: center; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🔑 Kodu Girin</h2>
+        <p>Terminalde (konsolda) görünen 6 haneli kodu buraya girin.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <input type="text" name="code" maxlength="6" placeholder="------" required>
+            <button type="submit">Doğrula ve Giriş Yap</button>
+        </form>
+    </div>
+</body>
+</html>
