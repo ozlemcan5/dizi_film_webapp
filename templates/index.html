@@ -6,7 +6,8 @@
     <style>
         body { background-color: #d3cccc; color: #222222; font-family: sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 650px; margin: 0 auto; background: #f2f2f2; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-        h1, h2 { text-align: center; color: #e2cb4a; }
+        h1 { text-align: center; color: #e2cb4a; }
+        h2 { text-align: center; color: #ffe032; }
         .form-section, .wheel-section { background: #e4e4e4; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
         form { display: flex; gap: 10px; }
         input, select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: #ffffff; color: #000; }
@@ -25,9 +26,9 @@
         .wheel-pointer {
             position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
             width: 0; height: 0; border-left: 10px solid transparent;
-            border-right: 10px solid transparent; border-bottom: 20px solid #d93848; z-index: 10;
+            border-right: 10px solid transparent; border-top: 20px solid #fca0a9; z-index: 10;
         }
-        .btn-wheel { background: #e96472; color: white; font-size: 16px; padding: 12px 25px; }
+        .btn-wheel { background: #fca0a9; color: white; font-size: 16px; padding: 12px 25px; }
         
         .suggestion-box { margin-top: 15px; background: #e2f0d9; padding: 15px; border-radius: 8px; border: 1px solid #28a745; display: none; }
         .suggestion-title { font-size: 20px; font-weight: bold; color: #1e7e34; margin: 8px 0; }
