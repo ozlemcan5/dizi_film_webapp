@@ -5,6 +5,7 @@ from flask_bcrypt import Bcrypt
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import requests
 import random
 import string
 import os
@@ -71,23 +72,28 @@ with app.app_context():
         db.session.commit()
 
 def send_email(to_email, code):
-    sender_email = "ozlemmcann5@gmail.com"        
-    sender_password = os.environ.get('MAIL_PASSWORD') 
+    api_key = os.environ.get('BREVO_API_KEY')
+    sender_email = os.environ.get('MAIL_PASSWORD')
     
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = to_email
-    msg['Subject'] = 'Şifre Sıfırlama Kodunuz'
+    url = "https://api.brevo.com/v3/smtp/email"
     
-    body = f"Şifre sıfırlama kodunuz: {code}"
-    msg.attach(MIMEText(body, 'plain'))
+    payload = {
+        "sender": {"name": "Film Dizi Takip", "email": sender_email},
+        "to": [{"email": to_email}],
+        "subject": "Şifre Sıfırlama Kodunuz",
+        "htmlContent": f"<html><body><h3>Şifre sıfırlama kodunuz:</h3><p><b>{code}</b></p></body></html>"
+    }
+    
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
     
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, to_email, msg.as_string())
-        server.quit()
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code not in [200, 201]:
+            print(f"Brevo API Hatası: {response.text}")
     except Exception as e:
         flash(f"Mail Gitmedi - Hata: {str(e)}", "danger")
         print(f"E-posta gönderilemedi: {e}")
