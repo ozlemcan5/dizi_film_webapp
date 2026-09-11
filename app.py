@@ -9,20 +9,29 @@ import sys
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'yerel-gizli-anahtar-123')
 
+# Supabase / PostgreSQL bağlantı URL düzenlemesi
 database_url = os.environ.get('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    database_url or 'sqlite:///database.db'
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# e3q8 (SSL/Bağlantı) hatasını kesin olarak önleyen motor ayarları:
+if database_url:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {'sslmode': 'require'},
+        'pool_pre_ping': True
+    }
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Giriş Yapabilmek için Kaydolun.'
+
 
 # --- VERİTABANI MODELLERİ ---
 class User(UserMixin, db.Model):
@@ -45,19 +54,18 @@ def load_user(user_id):
 
 
 with app.app_context():
-  db.create_all()
-  admin_user = User.query.filter_by(username='admin').first()
-  if not admin_user:
-    # Şifreyi doğrudan yazmak yerine sistem ortamından (environment) çekiyoruz
-    admin_password = os.environ.get('ADMIN_PASSWORD', 'guvenli_gecici_sifre')
-    hashed_pw = bcrypt.generate_password_hash(admin_password).decode('utf-8')
-    admin = User(username='admin', password=hashed_pw, is_admin=True)
-    db.session.add(admin)
-    db.session.commit()
+    db.create_all()
+    admin_user = User.query.filter_by(username='admin').first()
+    if not admin_user:
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'guvenli_gecici_sifre')
+        hashed_pw = bcrypt.generate_password_hash(admin_password).decode('utf-8')
+        admin = User(username='admin', password=hashed_pw, is_admin=True)
+        db.session.add(admin)
+        db.session.commit()
 
 # --- ROTALAR ---
 
-@app.route('/login', methods=['GET', 'POST5' if False else 'GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -92,7 +100,6 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        # Varsayılan başlangıç filmi ekleyelim
         default_item = MediaItem(title="Inception", type="film", watched=False, user_id=new_user.id)
         db.session.add(default_item)
         db.session.commit()
@@ -127,7 +134,6 @@ def index():
             continue
         filtered.append(item)
 
-    # JavaScript için listeyi dict formatına çevirelim
     all_media_dicts = [{"id": i.id, "title": i.title, "type": i.type, "watched": i.watched} for i in media_list]
     filtered_dicts = [{"id": i.id, "title": i.title, "type": i.type, "watched": i.watched} for i in filtered]
 
@@ -178,6 +184,6 @@ def delete(item_id):
     return redirect(url_for('index', type=active_type))
 
 if __name__ == '__main__':
-  with app.app_context():
-    db.create_all()
-  app.run(debug=True)
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)
