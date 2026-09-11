@@ -120,7 +120,11 @@ def index():
     if current_user.is_admin:
         return redirect(url_for('admin_panel'))
         
-    media_list = MediaItem.query.filter_by(user_id=current_user.id).all()
+    media_list = (
+    MediaItem.query.filter_by(user_id=current_user.id)
+    .order_by(MediaItem.title.asc())
+    .all()
+)
     active_tab = request.args.get('type', 'film')
     sub_tab = request.args.get('filter', 'hepsi')
 
