@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <title>Admin Paneli - Ne İzlesem?</title>
     <style>
-        body { background-color: #121212; color: #e0e0e0; font-family: sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-        h1 { color: #f5c518; text-align: center; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 14px; color: #aaa; }
-        .top-bar a { color: #ff4757; text-decoration: none; font-weight: bold; }
-        .user-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .user-title { font-size: 18px; color: #0be881; margin-bottom: 10px; font-weight: bold; }
+        body { background-color: #d3cccc; color: #222222; font-family: sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: #f2f2f2; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        h1 { color: #e2cb4a; text-align: center; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 14px; color: #444; }
+        .top-bar a { color: #e96472; text-decoration: none; font-weight: bold; }
+        .user-card { background: #e4e4e4; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .user-title { font-size: 18px; color: #1e7e34; margin-bottom: 10px; font-weight: bold; }
         ul { margin: 0; padding-left: 20px; }
-        li { margin-bottom: 5px; color: #ccc; }
+        li { margin-bottom: 5px; color: #000; font-weight: 500; }
         .watched { text-decoration: line-through; opacity: 0.5; }
     </style>
 </head>
@@ -38,7 +38,7 @@
                         {% endfor %}
                     </ul>
                 {% else %}
-                    <p style="color: #777; font-size: 13px; margin: 5px 0;">Henüz içerik eklememiş.</p>
+                    <p style="color: #666; font-size: 13px; margin: 5px 0;">Henüz içerik eklememiş.</p>
                 {% endif %}
             </div>
             {% endif %}
