@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
+import random
+import string
 import os
 import logging
 import sys
@@ -37,8 +39,11 @@ login_manager.login_message = 'Giriş Yapabilmek için Kaydolun.'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=True) # Yeni eklendi
+    phone = db.Column(db.String(20), nullable=True)               # Yeni eklendi
     password = db.Column(db.String(150), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    reset_code = db.Column(db.String(6), nullable=True)           # Şifremi unuttum 6 haneli kod için
     media_items = db.relationship('MediaItem', backref='owner', lazy=True, cascade="all, delete-orphan")
 
 class MediaItem(db.Model):
@@ -89,6 +94,8 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        email = request.form.get('email') # Yeni eklendi
+        phone = request.form.get('phone') # Yeni eklendi
         
         user_exists = User.query.filter_by(username=username).first()
         if user_exists:
@@ -96,7 +103,8 @@ def register():
             return redirect(url_for('register'))
         
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, password=hashed_pw, is_admin=False)
+        # Yeni kullanıcıyı e-posta ve telefon bilgileriyle oluşturuyoruz
+        new_user = User(username=username, email=email, phone=phone, password=hashed_pw, is_admin=False)
         db.session.add(new_user)
         db.session.commit()
         
@@ -165,6 +173,79 @@ def add():
         db.session.add(new_item)
         db.session.commit()
     return redirect(url_for('index', type=media_type))
+
+import random
+import string
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        current_user.email = request.form.get('email')
+        current_user.phone = request.form.get('phone')
+        
+        new_password = request.form.get('new_password')
+        if new_password:
+            current_user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+            
+        db.session.commit()
+        flash('Bilgileriniz başarıyla güncellendi.', 'success')
+        return redirect(url_for('profile'))
+    return render_template('profile.html')
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        identifier = request.form.get('identifier') # E-posta veya Telefon
+        user = User.query.filter((User.email == identifier) | (User.phone == identifier)).first()
+        
+        if user:
+            # 6 haneli rastgele kod üretme
+            code = ''.join(random.choices(string.digits, k=6))
+            user.reset_code = code
+            db.session.commit()
+            
+            # Not: Gerçek ortamda burada SMS veya E-posta gönderme kodu çalışır. 
+            # Test edebilmen için terminale / konsola yazdırıyoruz:
+            print(f"\n[ŞİFRE SIFIRLAMA KODU] {identifier} için Kod: {code}\n")
+            
+            session['reset_user_id'] = user.id
+            flash('Doğrulama kodu gönderildi. (Test için terminale bakabilirsiniz)', 'info')
+            return redirect(url_for('verify_code'))
+        
+        flash('Bu e-posta veya telefon numarasına ait kullanıcı bulunamadı.', 'danger')
+    return render_template('forgot_password.html')
+
+@app.route('/verify-code', methods=['GET', 'POST'])
+def verify_code():
+    if request.method == 'POST':
+        entered_code = request.form.get('code')
+        user_id = session.get('reset_user_id')
+        user = User.query.get(user_id)
+        
+        if user and user.reset_code and user.reset_code == entered_code:
+            login_user(user) # Kod doğruysa otomatik giriş yapılır
+            user.reset_code = None # Kullanılan kodu temizle
+            db.session.commit()
+            flash('Kod doğrulandı! Şimdi şifrenizi değiştirebilirsiniz.', 'success')
+            return redirect(url_for('change_password')) # Direkt şifre değiştirme ekranına atar
+        
+        flash('Hatalı veya süresi geçmiş kod!', 'danger')
+    return render_template('verify_code.html')
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        if new_password:
+            current_user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+            db.session.commit()
+            flash('Şifreniz başarıyla değiştirildi.', 'success')
+            if current_user.is_admin:
+                return redirect(url_for('admin_panel'))
+            return redirect(url_for('index'))
+    return render_template('change_password.html')
 
 @app.route('/toggle/<int:item_id>')
 @login_required
