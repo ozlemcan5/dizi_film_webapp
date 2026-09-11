@@ -73,7 +73,7 @@ with app.app_context():
 
 def send_email(to_email, code):
     api_key = os.environ.get('BREVO_API_KEY')
-    sender_email = os.environ.get('MAIL_PASSWORD')
+    sender_email = os.environ.get('MAIL_SENDER')
     
     url = "https://api.brevo.com/v3/smtp/email"
     
