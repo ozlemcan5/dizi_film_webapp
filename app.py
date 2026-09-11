@@ -1,12 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import random
-import string
 import random
 import string
 import os
@@ -26,7 +24,6 @@ if database_url and database_url.startswith('postgres://'):
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# e3q8 (SSL/Bağlantı) hatasını kesin olarak önleyen motor ayarları:
 if database_url:
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'connect_args': {'sslmode': 'require'},
@@ -44,17 +41,17 @@ login_manager.login_message = 'Giriş Yapabilmek için Kaydolun.'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=True) # Yeni eklendi
-    phone = db.Column(db.String(20), nullable=True)               # Yeni eklendi
+    email = db.Column(db.Text, nullable=True)
+    phone = db.Column(db.Text, nullable=True)
     password = db.Column(db.String(150), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    reset_code = db.Column(db.String(6), nullable=True)           # Şifremi unuttum 6 haneli kod için
+    reset_code = db.Column(db.Text, nullable=True)
     media_items = db.relationship('MediaItem', backref='owner', lazy=True, cascade="all, delete-orphan")
 
 class MediaItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
-    type = db.Column(db.String(50), nullable=False) # 'film' veya 'dizi'
+    type = db.Column(db.String(50), nullable=False)
     watched = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -75,7 +72,7 @@ with app.app_context():
 
 def send_email(to_email, code):
     sender_email = "ozlemmcann5@gmail.com"        
-    sender_password = "google_uygulama_sifresi"    # Google hesabından alacağın 16 haneli uygulama şifresi
+    sender_password = "google_uygulama_sifresi"    # 16 haneli Google uygulama şifren
     
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -86,7 +83,8 @@ def send_email(to_email, code):
     msg.attach(MIMEText(body, 'plain'))
     
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        # timeout=5 eklendi: İnternet yoksa veya Gmail yanıt vermezse site donmaz, hata verir geçer.
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
         server.starttls()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, to_email, msg.as_string())
@@ -120,8 +118,8 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        email = request.form.get('email') # Yeni eklendi
-        phone = request.form.get('phone') # Yeni eklendi
+        email = request.form.get('email')
+        phone = request.form.get('phone')
         
         user_exists = User.query.filter_by(username=username).first()
         if user_exists:
@@ -129,7 +127,6 @@ def register():
             return redirect(url_for('register'))
         
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-        # Yeni kullanıcıyı e-posta ve telefon bilgileriyle oluşturuyoruz
         new_user = User(username=username, email=email, phone=phone, password=hashed_pw, is_admin=False)
         db.session.add(new_user)
         db.session.commit()
@@ -155,10 +152,10 @@ def index():
         return redirect(url_for('admin_panel'))
         
     media_list = (
-    MediaItem.query.filter_by(user_id=current_user.id)
-    .order_by(MediaItem.title.asc())
-    .all()
-)
+        MediaItem.query.filter_by(user_id=current_user.id)
+        .order_by(MediaItem.title.asc())
+        .all()
+    )
     active_tab = request.args.get('type', 'film')
     sub_tab = request.args.get('filter', 'hepsi')
 
@@ -200,9 +197,6 @@ def add():
         db.session.commit()
     return redirect(url_for('index', type=media_type))
 
-import random
-import string
-
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -222,16 +216,14 @@ def profile():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        identifier = request.form.get('identifier') # Kullanıcının girdiği e-posta
+        identifier = request.form.get('identifier')
         user = User.query.filter((User.email == identifier) | (User.username == identifier)).first()
         
         if user and user.email:
-            # 6 haneli rastgele kod üret
             code = ''.join(random.choices(string.digits, k=6))
             user.reset_code = code
             db.session.commit()
             
-            # E-postayı gönder
             send_email(user.email, code)
             
             session['reset_user_id'] = user.id
@@ -249,11 +241,11 @@ def verify_code():
         user = User.query.get(user_id)
         
         if user and user.reset_code and user.reset_code == entered_code:
-            login_user(user) # Kod doğruysa otomatik giriş yapılır
-            user.reset_code = None # Kullanılan kodu temizle
+            login_user(user)
+            user.reset_code = None
             db.session.commit()
             flash('Kod doğrulandı! Şimdi şifrenizi değiştirebilirsiniz.', 'success')
-            return redirect(url_for('change_password')) # Direkt şifre değiştirme ekranına atar
+            return redirect(url_for('change_password'))
         
         flash('Hatalı veya süresi geçmiş kod!', 'danger')
     return render_template('verify_code.html')
