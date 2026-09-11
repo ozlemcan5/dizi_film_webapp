@@ -78,7 +78,7 @@ def send_email(to_email, code):
     url = "https://api.brevo.com/v3/smtp/email"
     
     payload = {
-        "sender": {"name": "Film Dizi Takip", "email": sender_email},
+        "sender": {"name": "Ne İzlesem?", "email": sender_email},
         "to": [{"email": to_email}],
         "subject": "Şifre Sıfırlama Kodunuz",
         "htmlContent": f"<html><body><h3>Şifre sıfırlama kodunuz:</h3><p><b>{code}</b></p></body></html>"
