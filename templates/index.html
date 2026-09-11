@@ -44,9 +44,13 @@
     <div class="container">
         <div class="top-bar">
             <span>Hoş geldin, <b>{{ current_user.username }}</b></span>
-            <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+            <div>
+                <a href="{{ url_for('profile') }}" style="margin-right: 15px; color: #1e7e34;">Profilim</a>
+                <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+            </div>  
         </div>
-
+    </div>
+    
         <h1>🎬 Ne İzlesem?</h1>
 
         <!-- Ekleme Formu -->
