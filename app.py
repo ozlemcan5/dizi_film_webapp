@@ -89,6 +89,7 @@ def send_email(to_email, code):
         server.sendmail(sender_email, to_email, msg.as_string())
         server.quit()
     except Exception as e:
+        flash(f"Mail Gitmedi - Hata: {str(e)}", "danger")
         print(f"E-posta gönderilemedi: {e}")
 
 # --- ROTALAR ---
