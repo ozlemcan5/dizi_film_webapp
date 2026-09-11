@@ -72,7 +72,7 @@ with app.app_context():
 
 def send_email(to_email, code):
     sender_email = "ozlemmcann5@gmail.com"        
-    sender_password = "google_uygulama_sifresi"    # 16 haneli Google uygulama şifren
+    sender_password = os.environ.get('MAIL_PASSWORD') 
     
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -83,7 +83,6 @@ def send_email(to_email, code):
     msg.attach(MIMEText(body, 'plain'))
     
     try:
-        # timeout=5 eklendi: İnternet yoksa veya Gmail yanıt vermezse site donmaz, hata verir geçer.
         server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
         server.starttls()
         server.login(sender_email, sender_password)
